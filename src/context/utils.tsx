@@ -1,5 +1,5 @@
-import React, { ComponentType, FC, PropsWithChildren, ReactNode } from 'react'
-import { ThemeProvider } from 'styled-components'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { ComponentType, PropsWithChildren } from 'react'
 
 export interface Provider {
   component: ComponentType<PropsWithChildren<any>>
