@@ -69,18 +69,21 @@ export const MenuStyled = styled.div<{ isActive: boolean }>`
   left: -200px;
   top: 80px;
   bottom: 0;
-  border-right: 1px solid ${(p) => darken(0.1, p.theme.bgSecondary)};
-
+  border-style: solid;
+  border-color: ${(p) => darken(0.1, p.theme.bgSecondary)};
+  border-width: 0;
   transition: all 0.3s ease-in;
 
   ${({ isActive }) =>
     isActive &&
     `
+    border-right-width: 1px;
     left: 0;
   `}
 
   @media ${devices.tablet} {
-    display: block;
+    display: flex;
+    flex-direction: row;
     position: static;
     height: auto;
     width: auto;

@@ -1,3 +1,6 @@
+import { useAppSelector } from '../../app/hooks'
+
 export default function IndexPage() {
-  return <div>Index Page</div>
+  const username = useAppSelector((state) => state.user.username)
+  return <div>{(username && <>Hello {username}</>) || <>Please log in</>}</div>
 }
