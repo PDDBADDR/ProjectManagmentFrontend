@@ -1,6 +1,8 @@
 import { RouteObject } from 'react-router-dom'
 import BasePage from './components/pages/BasePage'
 import IndexPage from './components/pages/IndexPage'
+import LoginPage from './components/pages/LoginPage'
+import LogoutPage from './components/pages/LogoutPage'
 import Page404 from './components/pages/Page404'
 
 export type CustomRouteObject = {
@@ -18,6 +20,16 @@ export const routes: CustomRouteObject[] = [
         name: 'index',
         index: true,
         element: <IndexPage />,
+      },
+      {
+        name: 'login',
+        path: 'login',
+        element: <LoginPage />,
+      },
+      {
+        name: 'logout',
+        path: 'logout',
+        element: <LogoutPage />,
       },
     ],
   },
