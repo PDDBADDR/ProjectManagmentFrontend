@@ -1,5 +1,5 @@
 import { darken, lighten } from 'polished'
-import { PropsWithChildren } from 'react'
+import { ButtonHTMLAttributes, PropsWithChildren } from 'react'
 import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import { resolve } from '../../routes'
@@ -12,28 +12,31 @@ interface ButtonStyleProps {
 
 interface ButtonProps extends PropsWithChildren {
   buttonType: keyof typeof buttonTypes
-  href?: string
+  to?: string
   style?: ButtonStyleProps
+  buttonProps?: ButtonHTMLAttributes<HTMLButtonElement>
 }
 
 export function Button(props: ButtonProps) {
   const ButtonComp = buttonTypes[props.buttonType]
   const navigate = useNavigate()
   const onClick = () => {
-    if (props.href) navigate(resolve(props.href))
+    if (props.to) navigate(resolve(props.to))
   }
   return (
-    <ButtonComp onClick={onClick} {...props.style}>
+    <ButtonComp onClick={onClick} {...props.buttonProps} {...props.style}>
       {props.children}
     </ButtonComp>
   )
 }
 
-const BaseButton = styled.a<ButtonStyleProps>`
-  padding: 10px;
+const BaseButton = styled.button<ButtonStyleProps>`
+  padding: 10px 15px;
+  margin: 3px;
   text-decoration: none;
   letter-spacing: 1px;
   color: ${(p) => (p.textColor ? p.theme[p.textColor] : p.theme.muted)};
+  border: none;
 
   transition: all 0.15s ease-in-out;
 
