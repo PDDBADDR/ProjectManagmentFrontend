@@ -1,13 +1,24 @@
-import { PropsWithChildren } from 'react'
+import { memo, PropsWithChildren } from 'react'
 import { ThemeProvider } from 'styled-components'
-import { combineProviders, Provider } from './utils'
+import { combineProviders, Provider } from '../utils/context'
+import { PersistGate } from 'redux-persist/integration/react'
+import { Provider as StoreProvider } from 'react-redux'
 import lightTheme from '../themes/light'
+import { persistor, store } from '../app/store'
 
 export default function AppContext(props: PropsWithChildren) {
   const providers: Provider[] = [
     {
-      component: ThemeProvider,
+      component: memo(ThemeProvider),
       props: { theme: lightTheme },
+    },
+    {
+      component: StoreProvider,
+      props: { store: store },
+    },
+    {
+      component: PersistGate,
+      props: { persistor: persistor },
     },
   ]
 
