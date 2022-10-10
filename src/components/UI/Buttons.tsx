@@ -8,6 +8,7 @@ import { contrast } from '../../utils/styling'
 interface ButtonStyleProps {
   textColor?: color
   bgColor?: color
+  fontSize?: number
 }
 
 interface ButtonProps extends PropsWithChildren {
@@ -36,6 +37,7 @@ const BaseButton = styled.button<ButtonStyleProps>`
   text-decoration: none;
   letter-spacing: 1px;
   color: ${(p) => (p.textColor ? p.theme[p.textColor] : p.theme.muted)};
+  font-size: ${(p) => (p.fontSize ? `${p.fontSize}rem` : '0.9rem')};
   border: none;
 
   transition: all 0.15s ease-in-out;
@@ -46,7 +48,10 @@ const BaseButton = styled.button<ButtonStyleProps>`
   }
 `
 
-const ButtonLinkStyled = styled(BaseButton)``
+const ButtonLinkStyled = styled(BaseButton)`
+  background-color: transparent;
+  padding: 0 15px;
+`
 
 const ButtonFilledStyled = styled(BaseButton)`
   border-radius: 5px;
