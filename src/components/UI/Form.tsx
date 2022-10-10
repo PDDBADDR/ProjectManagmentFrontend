@@ -22,13 +22,14 @@ function Label(props: PropsWithChildren) {
 }
 
 const FormStyled = styled.form`
+  display: flex;
+  flex-direction: column;
   width: 100%;
 `
 
 const InputStyled = styled.input`
   border: 1px solid black;
   border-radius: 5px;
-  width: 100%;
   padding: 5px;
   margin-bottom: 10px;
   font-size: 1rem;
