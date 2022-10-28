@@ -17,9 +17,12 @@ export default function BasePage() {
           <Button to='index' buttonType='link'>
             Home
           </Button>
-          <Button to='lolo2' buttonType='link'>
-            Link 1
-          </Button>
+
+          {user.username && (
+            <Button to='dashboard' buttonType='link'>
+              Dashboard
+            </Button>
+          )}
           <Button buttonType='link'>Link 2</Button>
           <Button buttonType='link'>Link 3</Button>
           {user.username && (
@@ -45,7 +48,8 @@ export default function BasePage() {
 }
 
 const MainWrapper = styled.main`
-  margin-top: 100px;
+  padding-top: 100px;
   background-color: ${(p) => p.theme.bgPrimary};
-  min-height: calc(100vh-100px);
+  color: ${(p) => p.theme.primaryFont};
+  min-height: calc(100vh - 100px);
 `
