@@ -1,16 +1,22 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import styled from 'styled-components'
 import {
+  useDeleteTaskMutation,
   useGetProjectDetailsMutation,
   useGetStatusesMutation,
+  useReindexMutation,
+  useUpdateTaskMutation,
 } from '../../../features/projects/projectsApi'
 import { Button } from '../../UI/Buttons'
-import StatusColumn, { StatusColumnRef } from './StatusColumn'
+import StatusColumn from './StatusColumn'
 import StatusModal from './StatusModal'
 import TaskModal from './TaskModal'
-import { DragDropContext, DropResult } from 'react-beautiful-dnd'
+import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd'
+import { moveTask, reorderItem, UpdateStatusState } from '../../../utils/tasks'
+import InfoBar from './InfoBar'
+import { InfoBarContextProvider } from '../../../context/InfoBarContext'
 
 interface ProjectLocationState {
   projectId: number
@@ -26,19 +32,15 @@ interface TaskModalState extends TaskModalHandler {
   show: boolean
 }
 
-interface StatusState {
-  droppableId: string
-  status: Status
-  ref: any
-}
-
 export default function ProjectPage() {
   const { state } = useLocation()
   const [getProjectDetails] = useGetProjectDetailsMutation()
   const [getStatuses] = useGetStatusesMutation()
+  const [reindex] = useReindexMutation()
+  const [updateTask] = useUpdateTaskMutation()
+  const [deleteTask] = useDeleteTaskMutation()
   const [project, setProject] = useState<Project | undefined>(undefined)
-  const [statuses, setStatuses] = useState<StatusState[]>([])
-  const statusesRef = useRef<StatusColumnRef[]>([])
+  const [statuses, setStatuses] = useState<ProjectStatusState[]>([])
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [taskModalHandler, setTaskModalHandler] = useState<TaskModalState | undefined>()
 
@@ -47,11 +49,36 @@ export default function ProjectPage() {
     setStatuses((prev) => [
       ...prev,
       {
+        ...status,
         droppableId: `col-${status.id}`,
-        status: status,
-        ref: (elem: never) => (statusesRef.current[prev.length] = elem),
       },
     ])
+  }
+
+  const addTask = (task: Task) => {
+    if (!project) return
+    const statusIndex = statuses.findIndex((x) => x.id === task.status_id)
+    const tasks = [...statuses[statusIndex].tasks, task]
+    const newStatuses = UpdateStatusState(statuses, statusIndex, tasks)
+    setStatuses(newStatuses)
+  }
+
+  const removeTask = (id: number) => {
+    if (!project) return
+    const statusIndex = statuses.findIndex((x) => x.tasks.find((y) => y.id === id))
+    if (statusIndex === -1) return
+    const task = statuses[statusIndex].tasks.find((x) => x.id === id)
+    if (!task) return
+    const tasks = statuses[statusIndex].tasks.filter((x) => x.id !== id)
+    requestDeleteTask(task).then(() => {
+      const ordered = reorderItem(tasks) as Task[]
+      console.log(task.status_id)
+
+      requestReindex('TASK', ordered, task.status_id).then(() => {
+        const newStatuses = UpdateStatusState(statuses, statusIndex, ordered)
+        setStatuses(newStatuses)
+      })
+    })
   }
 
   const showTaskModal = (opts: TaskModalHandler) => {
@@ -64,39 +91,108 @@ export default function ProjectPage() {
 
   const onDragEnd = (result: DropResult) => {
     const { source, destination } = result
-    if (!destination) return
 
+    if (!destination) return
     if (source.droppableId === destination.droppableId) {
-      const statusRef = statusesRef.current.find(
-        (status) => status.droppableId === destination.droppableId,
-      )
-      if (!statusRef) return
-      statusRef.reorderTasks(source.index, destination.index)
+      if (result.type === 'STATUSES') {
+        const ordered = reorderItem(
+          statuses,
+          source.index,
+          destination.index,
+        ) as ProjectStatusState[]
+        setStatuses(ordered)
+        requestReindex('STATUS', ordered)
+      } else {
+        const statusIndex = statuses.findIndex(
+          (status) => status.droppableId === destination.droppableId,
+        )
+        if (statusIndex === -1) return
+        const ordered = reorderItem(
+          statuses[statusIndex].tasks,
+          source.index,
+          destination.index,
+        ) as Task[]
+        setStatuses((prev) => {
+          return UpdateStatusState(prev, statusIndex, ordered)
+        })
+        requestReindex('TASK', ordered, statuses[statusIndex].id)
+      }
     } else {
-      const sourceRef = statusesRef.current.find(
+      if (result.type === 'STATUSES') return
+
+      const sourceStatusIndex = statuses.findIndex(
         (status) => status.droppableId === source.droppableId,
       )
-      const destinationRef = statusesRef.current.find(
+      const destinationStatusIndex = statuses.findIndex(
         (status) => status.droppableId === destination.droppableId,
       )
-      if (!sourceRef || !destinationRef) return
-      const task = sourceRef.removeTask(source.index)
-      destinationRef.addTaskAtIndex(task, destination.index)
+      if (sourceStatusIndex === -1 || destinationStatusIndex === -1) return
+      const { task, sourceList, destList } = moveTask(
+        statuses[sourceStatusIndex].tasks,
+        statuses[destinationStatusIndex].tasks,
+        source.index,
+        destination.index,
+        statuses[destinationStatusIndex].id,
+      )
+      let updatedState = UpdateStatusState(statuses, sourceStatusIndex, sourceList)
+      updatedState = UpdateStatusState(updatedState, destinationStatusIndex, destList)
+      setStatuses(updatedState)
+      requestReindex('TASK', sourceList, statuses[sourceStatusIndex].id).then(() => {
+        requestMoveTask(task, statuses[sourceStatusIndex].id).then(() => {
+          requestReindex('TASK', destList, statuses[destinationStatusIndex].id)
+        })
+      })
     }
   }
 
-  const fetchStatuses = async () => {
+  const requestReindex = async (obj: ReindexObject, elements: Reindex[], statusId?: number) => {
+    if (!project) return
+    const body = elements.map((element) => ({ id: element.id, index: element.index }))
+    console.log(statusId)
     try {
-      await getStatuses({ projectId: (state as ProjectLocationState)?.projectId })
-        .unwrap()
-        .then((payload) => {
-          const statuses = payload.map((value, index) => ({
-            droppableId: `col-${value.id}`,
-            status: value,
-            ref: (elem: never) => (statusesRef.current[index] = elem),
-          }))
-          setStatuses(statuses)
-        })
+      await reindex({
+        reindexObject: obj,
+        projectId: project.id,
+        statusId: statusId,
+        body: body,
+      }).unwrap()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: { detail: string } | any) {
+      console.log(error)
+
+      const errorMsg =
+        error.status === 'FETCH_ERROR' ? 'An unidentified error has occurred' : error.data.detail
+      toast.error(errorMsg)
+    }
+  }
+
+  const requestMoveTask = async (task: Task, oldStatusId: number) => {
+    if (!project) return
+    try {
+      await updateTask({
+        projectId: project.id,
+        statusId: oldStatusId,
+        taskId: task.id,
+        body: { statusId: task.status_id },
+      }).unwrap()
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: { detail: string } | any) {
+      const errorMsg =
+        error.status === 'FETCH_ERROR' ? 'An unidentified error has occurred' : error.data.detail
+      toast.error(errorMsg)
+    }
+  }
+
+  const requestDeleteTask = async (task: Task) => {
+    if (!project) return
+    try {
+      await deleteTask({
+        projectId: project.id,
+        statusId: task.status_id,
+        taskId: task.id,
+      }).unwrap()
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: { detail: string } | any) {
       const errorMsg =
@@ -111,7 +207,15 @@ export default function ProjectPage() {
         .unwrap()
         .then((payload) => {
           setProject(payload)
-          fetchStatuses()
+        })
+      await getStatuses({ projectId: (state as ProjectLocationState)?.projectId })
+        .unwrap()
+        .then((payload) => {
+          const statuses = payload.map((value) => ({
+            ...value,
+            droppableId: `col-${value.id}`,
+          }))
+          setStatuses(statuses)
         })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: { detail: string } | any) {
@@ -123,34 +227,45 @@ export default function ProjectPage() {
   useEffect(() => {
     fetchProject()
   }, [])
+
   return (
     <div>
       {project?.name}
       <hr />
-      <StatusesWrapperStyled>
+
+      <InfoBarContextProvider>
         <DragDropContext onDragEnd={onDragEnd}>
-          {statuses.map((status) => (
-            <StatusColumn
-              key={status.status.id}
-              {...status.status}
-              droppableId={status.droppableId}
-              showTaskModal={showTaskModal}
-              ref={status.ref}
-            />
-          ))}
+          <Droppable droppableId={'statuses'} type={'STATUSES'} direction={'horizontal'}>
+            {(provided) => (
+              <StatusesWrapperStyled ref={provided.innerRef}>
+                {statuses.map((status) => (
+                  <StatusColumn
+                    key={status.id}
+                    {...status}
+                    droppableId={status.droppableId}
+                    showTaskModal={showTaskModal}
+                    addTask={addTask}
+                  />
+                ))}
+                {provided.placeholder}
+                <Button
+                  buttonType={'link'}
+                  style={{ fontSize: 4 }}
+                  buttonProps={{
+                    onClick: () => {
+                      setShowStatusModal(true)
+                    },
+                  }}
+                >
+                  &#43;
+                </Button>
+              </StatusesWrapperStyled>
+            )}
+          </Droppable>
         </DragDropContext>
-        <Button
-          buttonType={'link'}
-          style={{ fontSize: 4 }}
-          buttonProps={{
-            onClick: () => {
-              setShowStatusModal(true)
-            },
-          }}
-        >
-          &#43;
-        </Button>
-      </StatusesWrapperStyled>
+        <InfoBar onRemoveTask={removeTask} onRemoveStatus={removeTask} />
+      </InfoBarContextProvider>
+
       <StatusModal
         title={'Create new status'}
         projectId={project?.id}

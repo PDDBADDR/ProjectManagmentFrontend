@@ -7,6 +7,7 @@ import Modal, { ModalProps } from '../../UI/Modal'
 
 interface TaskFormInput {
   name: string
+  description: string
   projectId: number
   statusId: number
 }
@@ -46,6 +47,8 @@ export default function TaskModal(props: TaskModalProps) {
       <Form formProps={{ onSubmit: handleSubmit(onSubmit) }}>
         <Form.Label>Task name</Form.Label>
         <Form.Input inputProps={{ type: 'text', ...register('name') }} />
+        <Form.Label>Task name</Form.Label>
+        <Form.TextArea textAreaProps={{ ...register('description') }} />
         <Button buttonType='filled' buttonProps={{ type: 'submit' }}>
           Create
         </Button>

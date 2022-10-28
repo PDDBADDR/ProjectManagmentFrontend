@@ -1,125 +1,119 @@
-import { darken } from 'polished'
-import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
-import { Droppable } from 'react-beautiful-dnd'
-import { toast } from 'react-toastify'
+import {
+  faCog,
+  faEllipsisVertical,
+  faGripVertical,
+  faPlus,
+  faTrashCan,
+} from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useContext } from 'react'
+import { Draggable, Droppable } from 'react-beautiful-dnd'
 import styled from 'styled-components'
-import { useGetTasksMutation } from '../../../features/projects/projectsApi'
-import { compareTasksIndex, reorderTasks } from '../../../utils/tasks'
+import { InfoBarContext } from '../../../context/InfoBarContext'
+import { contrast } from '../../../utils/styling'
 import { Button } from '../../UI/Buttons'
 import { TaskModalHandler } from './ProjectPage'
 import TaskCard from './TaskCard'
 
 interface StatusColumnProps extends Status {
   showTaskModal: (opts: TaskModalHandler) => void
+  addTask: (task: Task) => void
   droppableId: string
 }
 
-export interface StatusColumnRef {
-  reorderTasks: (sourceIndex: number, destinationIndex: number) => void
-  removeTask: (index: number) => Task
-  addTaskAtIndex: (task: Task, index: number) => void
-  droppableId: string
-}
-
-const StatusColumn = forwardRef((props: StatusColumnProps, ref) => {
-  const [getTasks] = useGetTasksMutation()
-  const [tasks, setTasks] = useState<Task[]>([])
-
-  useImperativeHandle(
-    ref,
-    (): StatusColumnRef => ({
-      reorderTasks: (sourceIndex: number, destinationIndex: number) => {
-        const ordered = reorderTasks(tasks, sourceIndex, destinationIndex)
-        setTasks(ordered)
-      },
-      removeTask: (index: number): Task => {
-        const sourceClone = Array.from(tasks)
-        const [removed] = sourceClone.splice(index, 1)
-        const ordered = sourceClone.map((value, index) => ({ ...value, index: index }))
-        setTasks(ordered)
-        return removed
-      },
-      addTaskAtIndex: (task: Task, index: number) => {
-        const sourceClone = Array.from(tasks)
-        sourceClone.splice(index, 0, task)
-        const ordered = sourceClone.map((value, index) => ({ ...value, index: index }))
-        setTasks(ordered)
-      },
-      droppableId: props.droppableId,
-    }),
-  )
-
-  const addTask = (task: Task) => {
-    setTasks((prev) => [...prev, task])
-  }
-
-  const fetchTasks = async () => {
-    try {
-      await getTasks({ projectId: props.project_id, statusId: props.id })
-        .unwrap()
-        .then((payload) => {
-          const sorted = Array.from(payload)
-          sorted.sort(compareTasksIndex)
-          setTasks(payload)
-        })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: { detail: string } | any) {
-      const errorMsg =
-        error.status === 'FETCH_ERROR' ? 'An unidentified error has occurred' : error.data.detail
-      toast.error(errorMsg)
-    }
-  }
-
-  useEffect(() => {
-    fetchTasks()
-  }, [])
-
+const StatusColumn = (props: StatusColumnProps) => {
+  const { setObject } = useContext(InfoBarContext)
   return (
-    <Droppable droppableId={props.droppableId}>
+    <Draggable draggableId={props.droppableId} index={props.index}>
       {(provided) => (
-        <StatusColumnStyled ref={provided.innerRef} {...provided.droppableProps}>
+        <StatusColumnStyled ref={provided.innerRef} {...provided.draggableProps}>
           <StatusColumnTitleStyled>
-            {props.name}
-            <Button
-              buttonType='link'
-              buttonProps={{
-                onClick: () => {
-                  props.showTaskModal({
-                    projectId: props.project_id,
-                    statusId: props.id,
-                    onAdd: addTask,
-                  })
-                },
-              }}
-            >
-              &#43; Add task
-            </Button>
+            <div>
+              <StatusColumnTitleGripStyled {...provided.dragHandleProps}>
+                <FontAwesomeIcon icon={faGripVertical} />
+              </StatusColumnTitleGripStyled>
+              {props.name}
+            </div>
+            <div>
+              <Button
+                buttonType='icon'
+                style={{ fontSize: 1.2 }}
+                buttonProps={{
+                  onClick: () => {
+                    setObject({ id: props.id, type: 'STATUS', name: props.name })
+                  },
+                }}
+              >
+                <FontAwesomeIcon icon={faCog} />
+              </Button>
+              <Button
+                buttonType='icon'
+                style={{ fontSize: 1.2 }}
+                buttonProps={{
+                  onClick: () => {
+                    props.showTaskModal({
+                      projectId: props.project_id,
+                      statusId: props.id,
+                      onAdd: props.addTask,
+                    })
+                  },
+                }}
+              >
+                <FontAwesomeIcon icon={faPlus} />
+              </Button>
+            </div>
           </StatusColumnTitleStyled>
-          {tasks.map((task) => (
-            <TaskCard key={task.id} {...task} />
-          ))}
-          {provided.placeholder}
+          <Droppable droppableId={props.droppableId}>
+            {(provided) => (
+              <StatusColumnBodyStyled ref={provided.innerRef} {...provided.droppableProps}>
+                {props.tasks.map((task) => (
+                  <TaskCard key={task.id} {...task} />
+                ))}
+                {provided.placeholder}
+              </StatusColumnBodyStyled>
+            )}
+          </Droppable>
         </StatusColumnStyled>
       )}
-    </Droppable>
+    </Draggable>
   )
-})
+}
 
 const StatusColumnStyled = styled.div`
-  width: clamp(220px, 50vw, 400px);
-  height: clamp(100px, 70vh, 800px);
-  flex: 0 0 clamp(220px, 50vw, 400px);
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  min-height: clamp(100px, 70vh, 780px);
+  flex: 0 0 clamp(250px, 50vw, 400px);
   margin: 10px;
-  border: 1px solid ${(p) => darken(0.1, p.theme.bgSecondary)};
+  border: 1px solid ${(p) => contrast(0.2, p.theme.bgSecondary, p.theme.contrast)};
   border-radius: 5px;
 `
 
 const StatusColumnTitleStyled = styled.div`
   padding: 10px;
-  border-bottom: 1px solid ${(p) => darken(0.1, p.theme.bgSecondary)};
+  border-bottom: 1px solid ${(p) => contrast(0.2, p.theme.bgSecondary, p.theme.contrast)};
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  align-items: center;
+
+  div:nth-child(1) {
+    display: flex;
+    align-items: center;
+  }
+
+  div:nth-child(2) {
+    white-space: nowrap;
+  }
+`
+
+const StatusColumnTitleGripStyled = styled.span`
+  padding-right: 10px;
+`
+
+const StatusColumnBodyStyled = styled.div`
+  flex: 1 0 100%;
 `
 
 export default StatusColumn
