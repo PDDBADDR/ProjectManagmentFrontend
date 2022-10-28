@@ -49,6 +49,7 @@ export const NavbarStyled = styled.div`
   top: 0;
   right: 0;
   height: 80px;
+  z-index: 9999;
 
   background-color: ${(p) => p.theme.bgSecondary};
   border-bottom: 1px solid ${(p) => darken(0.1, p.theme.bgSecondary)};
@@ -72,7 +73,7 @@ export const MenuStyled = styled.div<{ isActive: boolean }>`
   border-style: solid;
   border-color: ${(p) => darken(0.1, p.theme.bgSecondary)};
   border-width: 0;
-  transition: all 0.3s ease-in;
+  transition: all 0.1s ease-in;
 
   ${({ isActive }) =>
     isActive &&
