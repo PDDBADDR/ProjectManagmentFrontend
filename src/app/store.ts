@@ -13,6 +13,8 @@ import {
   REGISTER,
 } from 'redux-persist'
 import { setupListeners } from '@reduxjs/toolkit/dist/query'
+import { projectsApi } from '../features/projects/projectsApi'
+import projectsReducer from '../features/projects/projectsSlice'
 
 const persistConfig = {
   key: 'root',
@@ -21,8 +23,10 @@ const persistConfig = {
 }
 
 const combinedReducer = combineReducers({
+  [projectsApi.reducerPath]: projectsApi.reducer,
   [userApi.reducerPath]: userApi.reducer,
   user: userReducer,
+  projects: projectsReducer,
 })
 
 const persistedReducer = persistReducer(persistConfig, combinedReducer)
@@ -34,8 +38,9 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }).concat(userApi.middleware),
+    }).concat(userApi.middleware, projectsApi.middleware),
 })
+
 setupListeners(store.dispatch)
 export const persistor = persistStore(store)
 export type AppDispatch = typeof store.dispatch

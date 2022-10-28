@@ -1,9 +1,11 @@
 import { RouteObject } from 'react-router-dom'
 import BasePage from './components/pages/BasePage'
+import DashboardPage from './components/pages/dashboardPage/DashboardPage'
 import IndexPage from './components/pages/IndexPage'
 import LoginPage from './components/pages/LoginPage'
 import LogoutPage from './components/pages/LogoutPage'
 import Page404 from './components/pages/Page404'
+import ProjectPage from './components/pages/projectPage/ProjectPage'
 
 export type CustomRouteObject = {
   name: string
@@ -20,6 +22,16 @@ export const routes: CustomRouteObject[] = [
         name: 'index',
         index: true,
         element: <IndexPage />,
+      },
+      {
+        name: 'dashboard',
+        path: 'dashboard',
+        element: <DashboardPage />,
+      },
+      {
+        name: 'project',
+        path: 'project',
+        element: <ProjectPage />,
       },
       {
         name: 'login',

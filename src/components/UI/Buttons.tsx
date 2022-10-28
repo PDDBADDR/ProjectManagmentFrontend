@@ -4,10 +4,12 @@ import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import { resolve } from '../../routes'
 import { contrast } from '../../utils/styling'
+import { NavbarStyled } from './Navbar'
 
 interface ButtonStyleProps {
   textColor?: color
   bgColor?: color
+  fontSize?: number
 }
 
 interface ButtonProps extends PropsWithChildren {
@@ -36,6 +38,7 @@ const BaseButton = styled.button<ButtonStyleProps>`
   text-decoration: none;
   letter-spacing: 1px;
   color: ${(p) => (p.textColor ? p.theme[p.textColor] : p.theme.muted)};
+  font-size: ${(p) => (p.fontSize ? `${p.fontSize}rem` : '0.9rem')};
   border: none;
 
   transition: all 0.15s ease-in-out;
@@ -46,7 +49,14 @@ const BaseButton = styled.button<ButtonStyleProps>`
   }
 `
 
-const ButtonLinkStyled = styled(BaseButton)``
+const ButtonLinkStyled = styled(BaseButton)`
+  background-color: transparent;
+  padding: 0 15px;
+
+  ${NavbarStyled} & {
+    padding: 10px;
+  }
+`
 
 const ButtonFilledStyled = styled(BaseButton)`
   border-radius: 5px;
@@ -61,7 +71,12 @@ const ButtonFilledStyled = styled(BaseButton)`
   }
 `
 
+const ButtonIconStyled = styled(ButtonLinkStyled)`
+  padding: 2px;
+`
+
 const buttonTypes = {
   link: ButtonLinkStyled,
   filled: ButtonFilledStyled,
+  icon: ButtonIconStyled,
 }
