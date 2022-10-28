@@ -1,11 +1,5 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { projectsApi } from './projectsApi'
-
-interface Project {
-  name: string
-  owner_id: number
-  id: number
-}
 
 interface ProjectsSlice {
   projects: Project[]
@@ -18,7 +12,11 @@ const initialProjectsSlice: ProjectsSlice = {
 const projectsSlice = createSlice({
   name: 'projects',
   initialState: initialProjectsSlice,
-  reducers: {},
+  reducers: {
+    addProject: (state, { payload }: PayloadAction<Project>) => {
+      state.projects.push(payload)
+    },
+  },
   extraReducers: (builder) => {
     builder.addMatcher(projectsApi.endpoints.getProjects.matchFulfilled, (state, { payload }) => {
       state.projects = payload
@@ -26,4 +24,5 @@ const projectsSlice = createSlice({
   },
 })
 
+export const { addProject } = projectsSlice.actions
 export default projectsSlice.reducer
