@@ -40,7 +40,7 @@ export default function InfoBar(props: InfoBarProps) {
           buttonType='filled'
           buttonProps={{
             onClick: () => {
-              props.onRemoveTask(object.id)
+              if (object) props.onRemoveTask(object.id)
             },
           }}
         >
