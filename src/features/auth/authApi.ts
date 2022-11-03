@@ -10,6 +10,10 @@ interface LoginRequest {
   password: string
 }
 
+interface SignupRequest extends LoginRequest {
+  email: string
+}
+
 export const userApi = createApi({
   reducerPath: 'userApi',
   baseQuery: fetchBaseQuery({ baseUrl: import.meta.env.VITE_AUTH_API_BASE }),
@@ -22,7 +26,13 @@ export const userApi = createApi({
         return request
       },
     }),
+    signup: builder.mutation<void, SignupRequest>({
+      query: (credentials) => {
+        const request = { url: 'register', method: 'POST', body: credentials }
+        return request
+      },
+    }),
   }),
 })
 
-export const { useLoginMutation } = userApi
+export const { useLoginMutation, useSignupMutation } = userApi
