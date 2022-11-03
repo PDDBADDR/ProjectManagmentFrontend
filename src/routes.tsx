@@ -6,6 +6,7 @@ import LoginPage from './components/pages/LoginPage'
 import LogoutPage from './components/pages/LogoutPage'
 import Page404 from './components/pages/Page404'
 import ProjectPage from './components/pages/projectPage/ProjectPage'
+import SignupPage from './components/pages/SignupPage'
 
 export type CustomRouteObject = {
   name: string
@@ -37,6 +38,11 @@ export const routes: CustomRouteObject[] = [
         name: 'login',
         path: 'login',
         element: <LoginPage />,
+      },
+      {
+        name: 'signup',
+        path: 'signup',
+        element: <SignupPage />,
       },
       {
         name: 'logout',

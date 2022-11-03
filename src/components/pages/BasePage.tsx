@@ -23,8 +23,6 @@ export default function BasePage() {
               Dashboard
             </Button>
           )}
-          <Button buttonType='link'>Link 2</Button>
-          <Button buttonType='link'>Link 3</Button>
           {user.username && (
             <>
               <Button to='logout' buttonType='link'>
@@ -34,9 +32,14 @@ export default function BasePage() {
             </>
           )}
           {!user.username && (
-            <Button to='login' buttonType='filled'>
-              Sign in
-            </Button>
+            <>
+              <Button to='login' buttonType='link'>
+                Sign in
+              </Button>
+              <Button to='signup' buttonType='filled'>
+                Sign up
+              </Button>
+            </>
           )}
         </Navbar.Menu>
       </Navbar>

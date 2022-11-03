@@ -145,7 +145,6 @@ export const projectsApi = createApi({
     reindex: builder.mutation<void, ReindexRequest>({
       query: (credentials) => {
         let url = `/${credentials.projectId}/status/`
-        console.log(credentials)
 
         if (credentials.reindexObject === 'TASK') {
           if (credentials.statusId === undefined) throw 'Status id not provided'
