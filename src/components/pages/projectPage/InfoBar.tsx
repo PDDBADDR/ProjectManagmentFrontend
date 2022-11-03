@@ -14,9 +14,6 @@ interface InfoBarProps {
 export default function InfoBar(props: InfoBarProps) {
   const { object, setObject } = useContext(InfoBarContext)
 
-  useEffect(() => {
-    console.log(object)
-  }, [object])
   return (
     <InfoBarStyled show={object !== undefined}>
       <InfoBarHeaderStyled>

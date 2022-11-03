@@ -72,7 +72,6 @@ export default function ProjectPage() {
     const tasks = statuses[statusIndex].tasks.filter((x) => x.id !== id)
     requestDeleteTask(task).then(() => {
       const ordered = reorderItem(tasks) as Task[]
-      console.log(task.status_id)
 
       requestReindex('TASK', ordered, task.status_id).then(() => {
         const newStatuses = UpdateStatusState(statuses, statusIndex, ordered)
@@ -148,7 +147,6 @@ export default function ProjectPage() {
   const requestReindex = async (obj: ReindexObject, elements: Reindex[], statusId?: number) => {
     if (!project) return
     const body = elements.map((element) => ({ id: element.id, index: element.index }))
-    console.log(statusId)
     try {
       await reindex({
         reindexObject: obj,
@@ -158,8 +156,6 @@ export default function ProjectPage() {
       }).unwrap()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: { detail: string } | any) {
-      console.log(error)
-
       const errorMsg =
         error.status === 'FETCH_ERROR' ? 'An unidentified error has occurred' : error.data.detail
       toast.error(errorMsg)
